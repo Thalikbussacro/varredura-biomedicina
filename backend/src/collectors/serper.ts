@@ -271,6 +271,9 @@ export async function collectSerper(): Promise<void> {
           if (error.response?.status === 429) {
             console.warn('\n  ⚠️  Rate limit atingido, aguardando...');
             await delay(10000);
+          } else if (error.message?.includes('SERPER_API_KEY')) {
+            console.error(`\n  ❌ Erro: SERPER_API_KEY não configurada. Configure no arquivo .env`);
+            return; // Pula as buscas se não tiver API key
           } else {
             console.error(`\n  ❌ Erro na busca "${query}":`, error.message);
           }
