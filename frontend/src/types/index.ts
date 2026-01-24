@@ -26,4 +26,6 @@ export interface Filters {
   city: string;
   category: string;
   search: string;
+  onlyWithPhone: boolean;
+  onlyWithEmail: boolean;
 }

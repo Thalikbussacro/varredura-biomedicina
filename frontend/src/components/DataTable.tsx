@@ -30,19 +30,20 @@ export function DataTable({ data }: DataTableProps) {
       {
         accessorKey: 'telefones',
         header: 'Telefones',
-        size: 150,
+        size: 130,
         cell: ({ getValue }) => getValue() || '-'
       },
       {
         accessorKey: 'emails',
-        header: 'Emails',
+        header: 'Email',
         size: 200,
         cell: ({ getValue }) => {
           const value = getValue() as string | null;
           if (!value) return '-';
+          const firstEmail = value.split(',')[0].trim();
           return (
-            <a href={`mailto:${value.split(',')[0]}`} className="text-blue-600 hover:underline">
-              {value}
+            <a href={`mailto:${firstEmail}`} className="text-blue-600 hover:underline text-xs">
+              {firstEmail}
             </a>
           );
         }
@@ -50,7 +51,7 @@ export function DataTable({ data }: DataTableProps) {
       {
         accessorKey: 'site',
         header: 'Site',
-        size: 100,
+        size: 80,
         cell: ({ getValue }) => {
           const value = getValue() as string | null;
           if (!value) return '-';
@@ -59,18 +60,76 @@ export function DataTable({ data }: DataTableProps) {
               href={value}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
+              className="text-blue-600 hover:underline text-xs"
             >
-              Acessar
+              🔗 Acessar
             </a>
           );
         }
       },
       {
-        accessorKey: 'instagram',
-        header: 'Instagram',
-        size: 120,
-        cell: ({ getValue }) => getValue() || '-'
+        id: 'redes',
+        header: 'Redes Sociais',
+        size: 150,
+        cell: ({ row }) => {
+          const instagram = row.original.instagram;
+          const whatsapp = row.original.whatsapp;
+          const facebook = row.original.facebook;
+
+          const links = [];
+
+          if (instagram) {
+            links.push(
+              <a
+                key="ig"
+                href={instagram.includes('http') ? instagram : `https://instagram.com/${instagram}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-pink-600 hover:underline"
+                title="Instagram"
+              >
+                📷
+              </a>
+            );
+          }
+
+          if (whatsapp) {
+            const waNumber = whatsapp.replace(/\D/g, '');
+            links.push(
+              <a
+                key="wa"
+                href={`https://wa.me/${waNumber}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-green-600 hover:underline"
+                title="WhatsApp"
+              >
+                💬
+              </a>
+            );
+          }
+
+          if (facebook) {
+            links.push(
+              <a
+                key="fb"
+                href={facebook.includes('http') ? facebook : `https://facebook.com/${facebook}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 hover:underline"
+                title="Facebook"
+              >
+                👍
+              </a>
+            );
+          }
+
+          return links.length > 0 ? (
+            <div className="flex gap-2">{links}</div>
+          ) : (
+            '-'
+          );
+        }
       },
     ],
     []

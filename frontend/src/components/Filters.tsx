@@ -69,6 +69,34 @@ export function Filters({ filters, onChange }: FiltersProps) {
           className="px-3 py-2 border rounded-md min-w-[200px]"
         />
       </div>
+
+      <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium text-gray-700 mb-1">Filtros de Contato</label>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="onlyWithPhone"
+            checked={filters.onlyWithPhone}
+            onChange={(e) => onChange({ ...filters, onlyWithPhone: e.target.checked })}
+            className="w-4 h-4 text-blue-600 rounded"
+          />
+          <label htmlFor="onlyWithPhone" className="text-sm text-gray-700 cursor-pointer">
+            📞 Só com telefone
+          </label>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="onlyWithEmail"
+            checked={filters.onlyWithEmail}
+            onChange={(e) => onChange({ ...filters, onlyWithEmail: e.target.checked })}
+            className="w-4 h-4 text-blue-600 rounded"
+          />
+          <label htmlFor="onlyWithEmail" className="text-sm text-gray-700 cursor-pointer">
+            📧 Só com email
+          </label>
+        </div>
+      </div>
     </div>
   );
 }

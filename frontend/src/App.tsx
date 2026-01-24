@@ -11,10 +11,19 @@ function App() {
     city: '',
     category: '',
     search: '',
+    onlyWithPhone: false,
+    onlyWithEmail: false,
   });
 
-  const { data, loading, error } = useEstablishments(filters);
+  const { data: rawData, loading, error } = useEstablishments(filters);
   const stats = useStats();
+
+  // Aplicar filtros client-side para telefone e email
+  const data = rawData.filter((item) => {
+    if (filters.onlyWithPhone && !item.telefones) return false;
+    if (filters.onlyWithEmail && !item.emails) return false;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-gray-100">
