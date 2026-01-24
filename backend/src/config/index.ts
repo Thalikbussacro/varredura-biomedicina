@@ -42,5 +42,5 @@ export const CONFIG = {
   API_PORT: parseInt(process.env.API_PORT || '3001'),
   SERPER_API_KEY: process.env.SERPER_API_KEY || '',
   CRAWL_TIMEOUT: 10000,
-  CONCURRENT_CRAWLS: 5,
+  CONCURRENT_CRAWLS: 1, // Reduzido para 1 para evitar estouro de memória
 } as const;

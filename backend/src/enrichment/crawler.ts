@@ -51,6 +51,7 @@ async function extractContactsFromUrl(url: string): Promise<ExtractedContacts> {
         'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
       },
       maxRedirects: 3,
+      maxContentLength: 5 * 1024 * 1024, // Limitar a 5MB
     });
 
     const $ = cheerio.load(html);
@@ -58,9 +59,18 @@ async function extractContactsFromUrl(url: string): Promise<ExtractedContacts> {
     // Remover scripts e styles
     $('script, style, noscript').remove();
 
-    const text = $('body').text();
+    // Extrair apenas seções relevantes ao invés de todo o body
+    const relevantSections = [
+      $('header').text(),
+      $('footer').text(),
+      $('[class*="contact"]').text(),
+      $('[id*="contact"]').text(),
+      $('[class*="contato"]').text(),
+      $('[id*="contato"]').text(),
+    ].join(' ');
+
     const allHrefs = $('a').map((_, el) => $(el).attr('href')).get().join(' ');
-    const fullText = `${text} ${allHrefs}`;
+    const fullText = `${relevantSections} ${allHrefs}`.substring(0, 50000); // Limitar texto
 
     // Extrair emails
     const emails = fullText.match(PATTERNS.email) || [];
@@ -89,36 +99,8 @@ async function extractContactsFromUrl(url: string): Promise<ExtractedContacts> {
     const linkedin = fullText.match(PATTERNS.linkedin) || [];
     contacts.linkedin = [...new Set(linkedin)];
 
-    // Tentar encontrar página de contato
-    const contactLinks = $('a').filter((_, el) => {
-      const href = $(el).attr('href') || '';
-      const text = $(el).text().toLowerCase();
-      return /contato|contact|fale.?conosco/i.test(href) ||
-             /contato|contact|fale conosco/i.test(text);
-    });
-
-    if (contactLinks.length > 0) {
-      const contactHref = $(contactLinks[0]).attr('href');
-      if (contactHref && !contactHref.startsWith('mailto:')) {
-        try {
-          const contactUrl = new URL(contactHref, url).href;
-          if (contactUrl !== url) {
-            await delay(300);
-            const extraContacts = await extractContactsFromUrl(contactUrl);
-
-            // Merge contacts
-            contacts.emails.push(...extraContacts.emails);
-            contacts.phones.push(...extraContacts.phones);
-            contacts.whatsapp.push(...extraContacts.whatsapp);
-            contacts.instagram.push(...extraContacts.instagram);
-            contacts.facebook.push(...extraContacts.facebook);
-            contacts.linkedin.push(...extraContacts.linkedin);
-          }
-        } catch {
-          // Silently fail on contact page
-        }
-      }
-    }
+    // DESABILITADO: Crawling recursivo da página de contato (causava duplicação de memória)
+    // A extração de contatos já pega as informações principais da home page
 
   } catch {
     // Silently fail - muitos sites não respondem
@@ -162,53 +144,68 @@ export async function enrichEstablishments(): Promise<void> {
   let processed = 0;
   let withContacts = 0;
 
-  const tasks = establishments.map(est =>
-    limit(async () => {
-      await delay(500);
+  // Processar em lotes pequenos para evitar estouro de memória
+  const BATCH_SIZE = 50; // Aumentado pois agora temos concorrência 1
+  const batches = [];
+  for (let i = 0; i < establishments.length; i += BATCH_SIZE) {
+    batches.push(establishments.slice(i, i + BATCH_SIZE));
+  }
 
-      const contacts = await extractContactsFromUrl(est.website);
+  for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+    const batch = batches[batchIndex];
+    const tasks = batch.map(est =>
+      limit(async () => {
+        await delay(500);
 
-      let hasContact = false;
+        const contacts = await extractContactsFromUrl(est.website);
 
-      // Inserir contatos
-      for (const email of contacts.emails.slice(0, 3)) {
-        stmtInsertContact.run(est.id, 'email', email);
-        hasContact = true;
-      }
+        let hasContact = false;
 
-      for (const phone of contacts.phones.slice(0, 3)) {
-        stmtInsertContact.run(est.id, 'phone', phone);
-        hasContact = true;
-      }
+        // Inserir contatos
+        for (const email of contacts.emails.slice(0, 3)) {
+          stmtInsertContact.run(est.id, 'email', email);
+          hasContact = true;
+        }
 
-      for (const wa of contacts.whatsapp.slice(0, 2)) {
-        stmtInsertContact.run(est.id, 'whatsapp', wa);
-        hasContact = true;
-      }
+        for (const phone of contacts.phones.slice(0, 3)) {
+          stmtInsertContact.run(est.id, 'phone', phone);
+          hasContact = true;
+        }
 
-      for (const ig of contacts.instagram.slice(0, 2)) {
-        stmtInsertContact.run(est.id, 'instagram', ig);
-        hasContact = true;
-      }
+        for (const wa of contacts.whatsapp.slice(0, 2)) {
+          stmtInsertContact.run(est.id, 'whatsapp', wa);
+          hasContact = true;
+        }
 
-      for (const fb of contacts.facebook.slice(0, 2)) {
-        stmtInsertContact.run(est.id, 'facebook', fb);
-        hasContact = true;
-      }
+        for (const ig of contacts.instagram.slice(0, 2)) {
+          stmtInsertContact.run(est.id, 'instagram', ig);
+          hasContact = true;
+        }
 
-      for (const li of contacts.linkedin.slice(0, 2)) {
-        stmtInsertContact.run(est.id, 'linkedin', li);
-        hasContact = true;
-      }
+        for (const fb of contacts.facebook.slice(0, 2)) {
+          stmtInsertContact.run(est.id, 'facebook', fb);
+          hasContact = true;
+        }
 
-      processed++;
-      if (hasContact) withContacts++;
+        for (const li of contacts.linkedin.slice(0, 2)) {
+          stmtInsertContact.run(est.id, 'linkedin', li);
+          hasContact = true;
+        }
 
-      process.stdout.write(`\r  🌐 Processados: ${processed}/${establishments.length} | Com contatos: ${withContacts}`);
-    })
-  );
+        processed++;
+        if (hasContact) withContacts++;
 
-  await Promise.all(tasks);
+        process.stdout.write(`\r  🌐 Processados: ${processed}/${establishments.length} | Com contatos: ${withContacts}`);
+      })
+    );
+
+    await Promise.all(tasks);
+    
+    // Forçar garbage collection entre lotes (se disponível)
+    if (global.gc && batchIndex % 10 === 0) {
+      global.gc();
+    }
+  }
 
   console.log(`\n  ✅ Enriquecimento finalizado\n`);
 }
