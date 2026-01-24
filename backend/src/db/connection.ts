@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
-import { readFileSync } from 'fs';
+import { readFileSync, mkdirSync } from 'fs';
+import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -8,6 +9,12 @@ const __dirname = dirname(__filename);
 
 // Caminho do banco de dados
 const DB_PATH = process.env.DB_PATH || join(__dirname, '../../../data/leads.db');
+
+// Criar diretório data/ se não existir
+const dbDir = dirname(DB_PATH);
+if (!existsSync(dbDir)) {
+  mkdirSync(dbDir, { recursive: true });
+}
 
 // Criar conexão com o banco
 export const db = new Database(DB_PATH, {
@@ -35,7 +42,11 @@ export function initDatabase(): void {
   for (const statement of statements) {
     try {
       db.exec(statement);
-    } catch (error) {
+    } catch (error: any) {
+      // Ignorar erros de "já existe" (tabelas/índices/views já criados)
+      if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+        continue;
+      }
       console.error('Erro ao executar statement:', statement);
       throw error;
     }

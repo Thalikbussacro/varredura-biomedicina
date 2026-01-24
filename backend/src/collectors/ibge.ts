@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { db } from '../db/connection.js';
@@ -67,14 +67,18 @@ export async function collectCities(): Promise<void> {
       // Carregar dados de fallback
       try {
         const fallbackPath = join(__dirname, '../data/cities-population.json');
-        const fallbackData = JSON.parse(readFileSync(fallbackPath, 'utf-8')) as Record<string, Record<string, { name: string; pop: number }>>;
+        if (existsSync(fallbackPath)) {
+          const fallbackData = JSON.parse(readFileSync(fallbackPath, 'utf-8')) as Record<string, Record<string, { name: string; pop: number }>>;
 
-        const ufData = fallbackData[uf] || {};
-        for (const [ibgeId, cityData] of Object.entries(ufData)) {
-          populationMap.set(parseInt(ibgeId), cityData.pop);
+          const ufData = fallbackData[uf] || {};
+          for (const [ibgeId, cityData] of Object.entries(ufData)) {
+            populationMap.set(parseInt(ibgeId), cityData.pop);
+          }
+
+          console.log(`  ℹ️  Carregados ${populationMap.size} registros do fallback`);
+        } else {
+          console.warn(`  ⚠️  Arquivo de fallback não encontrado: ${fallbackPath}`);
         }
-
-        console.log(`  ℹ️  Carregados ${populationMap.size} registros do fallback`);
       } catch (fallbackError) {
         console.warn(`  ⚠️  Erro ao carregar fallback, inserindo todas as cidades`);
       }
