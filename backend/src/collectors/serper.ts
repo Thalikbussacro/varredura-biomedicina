@@ -61,15 +61,109 @@ function inferCategory(title: string, snippet: string): string {
 }
 
 /**
- * Verifica se o resultado é irrelevante (redes sociais, portais de vagas, etc)
+ * Verifica se o título é muito genérico ou é uma keyword de busca
+ */
+function isGenericTitle(title: string): boolean {
+  const lowerTitle = title.toLowerCase().trim();
+
+  // Títulos muito curtos (menos de 10 caracteres)
+  if (lowerTitle.length < 10) return true;
+
+  // Títulos genéricos ou keywords de busca
+  const genericPatterns = [
+    /^exames$/i,
+    /^especialista em/i,
+    /^clínica de/i,
+    /^laboratório de/i,
+    /^hospital$/i,
+    /^centro de$/i,
+    /especialista em fertilidade \w+$/i, // "Especialista em fertilidade [cidade]"
+    /fertilização in vitro$/i,
+    /reprodução assistida$/i,
+    /análises clínicas$/i,
+  ];
+
+  return genericPatterns.some(pattern => pattern.test(lowerTitle));
+}
+
+/**
+ * Verifica se o estabelecimento é relevante para estágios em biomedicina
+ * Filtra ginecologia geral e hospitais não especializados
+ */
+function isRelevantEstablishment(title: string, snippet: string): boolean {
+  const text = `${title} ${snippet}`.toLowerCase();
+
+  // ACEITAR: Clínicas/centros de reprodução assistida, FIV, fertilidade
+  const acceptPatterns = [
+    /reprodução.*assistida/i,
+    /fertilização.*in.*vitro/i,
+    /fiv\b/i,
+    /fertilidade/i,
+    /andrologia/i,
+    /genética/i,
+    /citogenética/i,
+    /embriologia/i,
+    /banco.*sêmen/i,
+    /banco.*óvulos/i,
+    /criopreservação/i,
+  ];
+
+  // Se tem termos relevantes, aceitar
+  if (acceptPatterns.some(pattern => pattern.test(text))) {
+    return true;
+  }
+
+  // REJEITAR: Ginecologia geral SEM menção a reprodução/fertilidade
+  if (/ginecolog/i.test(text) && !acceptPatterns.some(p => p.test(text))) {
+    return false;
+  }
+
+  // REJEITAR: Hospital genérico SEM especialização
+  if (/hospital/i.test(title) && !acceptPatterns.some(p => p.test(text))) {
+    return false;
+  }
+
+  // REJEITAR: Clínica médica geral
+  if (/clínica médica/i.test(text) && !acceptPatterns.some(p => p.test(text))) {
+    return false;
+  }
+
+  // Aceitar laboratórios de análises clínicas (podem ter setor de andrologia)
+  if (/laborat[óo]rio/i.test(text)) {
+    return true;
+  }
+
+  // Aceitar qualquer coisa que tenha passado pelos filtros anteriores
+  return true;
+}
+
+/**
+ * Verifica se o resultado é irrelevante (redes sociais, portais de vagas, PDFs, etc)
  */
 function isIrrelevantResult(result: SerperResult): boolean {
+  // Filtrar URLs de arquivos (PDFs, DOCs, planilhas)
+  const filePatterns = [
+    /\.pdf$/i,
+    /\.doc$/i,
+    /\.docx$/i,
+    /\.xls$/i,
+    /\.xlsx$/i,
+    /\.ppt$/i,
+    /\.pptx$/i,
+  ];
+
+  if (filePatterns.some(pattern => pattern.test(result.link))) {
+    return true;
+  }
+
+  // Filtrar sites irrelevantes
   const irrelevantPatterns = [
     /facebook\.com/i,
     /instagram\.com/i,
     /linkedin\.com/i,
     /twitter\.com/i,
     /youtube\.com/i,
+    /tiktok\.com/i,
     /doctoralia/i,
     /boaforma/i,
     /wikipedia/i,
@@ -81,9 +175,21 @@ function isIrrelevantResult(result: SerperResult): boolean {
     /gupy\.io/i,
     /infojobs/i,
     /olx\.com/i,
+    /mercadolivre/i,
+    /google\.com/i,
+    /youtube/i,
   ];
 
-  return irrelevantPatterns.some(pattern => pattern.test(result.link));
+  if (irrelevantPatterns.some(pattern => pattern.test(result.link))) {
+    return true;
+  }
+
+  // Filtrar títulos genéricos
+  if (isGenericTitle(result.title)) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -142,6 +248,9 @@ export async function collectSerper(): Promise<void> {
           for (const result of results) {
             // Filtrar resultados irrelevantes
             if (isIrrelevantResult(result)) continue;
+
+            // Filtrar estabelecimentos não relevantes para biomedicina
+            if (!isRelevantEstablishment(result.title, result.snippet)) continue;
 
             const category = inferCategory(result.title, result.snippet);
 

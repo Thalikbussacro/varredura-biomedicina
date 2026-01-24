@@ -8,7 +8,7 @@
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "pipeline": "tsx ../scripts/run-pipeline.ts"
+    "pipeline": "tsx scripts/run-pipeline.ts"
   },
   "keywords": [
     "biomedica",

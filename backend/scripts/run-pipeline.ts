@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { runPipeline } from '../backend/src/pipeline.js';
+import { runPipeline } from '../src/pipeline.js';
 
 runPipeline()
   .then(() => {
