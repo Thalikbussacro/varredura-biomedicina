@@ -43,7 +43,7 @@ function App() {
       <main className="container mx-auto px-4 py-6">
         <div className="flex justify-between items-start mb-4">
           <FiltersComponent filters={filters} onChange={setFilters} />
-          <ExportButton filters={filters} />
+          <ExportButton filters={filters} data={data} />
         </div>
 
         {loading && (
