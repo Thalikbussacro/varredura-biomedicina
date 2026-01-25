@@ -203,7 +203,7 @@ export function useStats() {
     return {
       total: data.length,
       withContacts,
-      byCategory: Object.entries(byCategory).map(([name, count]) => ({ name, count })),
+      byCategory: Object.entries(byCategory).map(([category, count]) => ({ category, count })),
       byUf: Object.entries(byUf).map(([uf, count]) => ({ uf, count })),
     };
   }, [data, isStatic]);
