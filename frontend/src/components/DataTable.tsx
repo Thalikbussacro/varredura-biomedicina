@@ -18,31 +18,63 @@ export function DataTable({ data }: DataTableProps) {
 
   const columns = useMemo<ColumnDef<Establishment>[]>(
     () => [
-      { accessorKey: 'estado', header: 'UF', size: 60 },
-      { accessorKey: 'cidade', header: 'Cidade', size: 150 },
-      { accessorKey: 'nome', header: 'Nome', size: 250 },
+      { accessorKey: 'estado', header: 'UF', size: 50 },
+      {
+        accessorKey: 'cidade',
+        header: 'Cidade',
+        size: 110,
+        cell: ({ getValue }) => {
+          const value = getValue() as string;
+          return (
+            <span title={value} className="block truncate max-w-[110px]">
+              {value}
+            </span>
+          );
+        }
+      },
+      {
+        accessorKey: 'nome',
+        header: 'Nome',
+        size: 180,
+        cell: ({ getValue }) => {
+          const value = getValue() as string;
+          return (
+            <span title={value} className="block truncate max-w-[180px]">
+              {value}
+            </span>
+          );
+        }
+      },
       {
         accessorKey: 'categoria',
         header: 'Categoria',
         cell: ({ getValue }) => (getValue() as string).replace(/_/g, ' '),
-        size: 150
+        size: 130
       },
       {
         accessorKey: 'telefones',
         header: 'Telefones',
-        size: 130,
-        cell: ({ getValue }) => getValue() || '-'
+        size: 110,
+        cell: ({ getValue }) => {
+          const value = getValue() as string | null;
+          if (!value) return '-';
+          return <span className="text-xs">{value}</span>;
+        }
       },
       {
         accessorKey: 'emails',
         header: 'Email',
-        size: 200,
+        size: 160,
         cell: ({ getValue }) => {
           const value = getValue() as string | null;
           if (!value) return '-';
           const firstEmail = value.split(',')[0].trim();
           return (
-            <a href={`mailto:${firstEmail}`} className="text-blue-600 hover:underline text-xs">
+            <a
+              href={`mailto:${firstEmail}`}
+              className="text-blue-600 hover:underline text-xs block truncate max-w-[160px]"
+              title={firstEmail}
+            >
               {firstEmail}
             </a>
           );
@@ -51,7 +83,7 @@ export function DataTable({ data }: DataTableProps) {
       {
         accessorKey: 'site',
         header: 'Site',
-        size: 80,
+        size: 50,
         cell: ({ getValue }) => {
           const value = getValue() as string | null;
           if (!value) return '-';
@@ -61,16 +93,17 @@ export function DataTable({ data }: DataTableProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline text-xs"
+              title={value}
             >
-              🔗 Acessar
+              🔗
             </a>
           );
         }
       },
       {
         id: 'redes',
-        header: 'Redes Sociais',
-        size: 150,
+        header: 'Redes',
+        size: 80,
         cell: ({ row }) => {
           const instagram = row.original.instagram;
           const whatsapp = row.original.whatsapp;
@@ -85,7 +118,7 @@ export function DataTable({ data }: DataTableProps) {
                 href={instagram.includes('http') ? instagram : `https://instagram.com/${instagram}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-pink-600 hover:underline"
+                className="text-pink-600 hover:underline text-sm"
                 title="Instagram"
               >
                 📷
@@ -101,7 +134,7 @@ export function DataTable({ data }: DataTableProps) {
                 href={`https://wa.me/${waNumber}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-green-600 hover:underline"
+                className="text-green-600 hover:underline text-sm"
                 title="WhatsApp"
               >
                 💬
@@ -116,7 +149,7 @@ export function DataTable({ data }: DataTableProps) {
                 href={facebook.includes('http') ? facebook : `https://facebook.com/${facebook}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-700 hover:underline"
+                className="text-blue-700 hover:underline text-sm"
                 title="Facebook"
               >
                 👍
@@ -125,7 +158,7 @@ export function DataTable({ data }: DataTableProps) {
           }
 
           return links.length > 0 ? (
-            <div className="flex gap-2">{links}</div>
+            <div className="flex gap-1">{links}</div>
           ) : (
             '-'
           );
@@ -145,8 +178,8 @@ export function DataTable({ data }: DataTableProps) {
   });
 
   return (
-    <div className="overflow-x-auto border rounded-lg">
-      <table className="min-w-full divide-y divide-gray-200">
+    <div className="overflow-x-auto border rounded-lg shadow-sm">
+      <table className="w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
@@ -154,7 +187,7 @@ export function DataTable({ data }: DataTableProps) {
                 <th
                   key={header.id}
                   onClick={header.column.getToggleSortingHandler()}
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-tight cursor-pointer hover:bg-gray-100"
                   style={{ width: header.getSize() }}
                 >
                   <div className="flex items-center gap-1">
@@ -173,7 +206,7 @@ export function DataTable({ data }: DataTableProps) {
           {table.getRowModel().rows.map((row) => (
             <tr key={row.id} className="hover:bg-gray-50">
               {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                <td key={cell.id} className="px-2 py-2 text-sm text-gray-900">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
