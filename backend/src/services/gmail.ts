@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
+import nodemailer from 'nodemailer';
 import type { SendEmailParams, TokenData } from '../types/email.js';
 
 export class GmailService {
@@ -49,19 +50,27 @@ export class GmailService {
 
     const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
 
-    // Codifica o assunto usando RFC 2047 (Base64) para suportar acentos
-    const encodedSubject = `=?UTF-8?B?${Buffer.from(params.subject).toString('base64')}?=`;
+    // Usa nodemailer para construir a mensagem MIME com encoding UTF-8 correto
+    const mailOptions = {
+      from: params.from || 'me',
+      to: params.to,
+      subject: params.subject,
+      text: params.body,
+    };
 
-    const message = [
-      'Content-Type: text/plain; charset=utf-8',
-      'MIME-Version: 1.0',
-      `To: ${params.to}`,
-      `Subject: ${encodedSubject}`,
-      '',
-      params.body,
-    ].join('\n');
+    // Cria um transporte fake apenas para gerar a mensagem MIME
+    const transporter = nodemailer.createTransport({ streamTransport: true });
 
-    const encodedMessage = Buffer.from(message)
+    const info = await transporter.sendMail(mailOptions);
+    const message = await new Promise<string>((resolve, reject) => {
+      let raw = '';
+      info.message.on('data', (chunk: Buffer) => { raw += chunk.toString('utf-8'); });
+      info.message.on('end', () => resolve(raw));
+      info.message.on('error', reject);
+    });
+
+    // Codifica a mensagem em base64 URL-safe como a API espera
+    const encodedMessage = Buffer.from(message, 'utf-8')
       .toString('base64')
       .replace(/\+/g, '-')
       .replace(/\//g, '_')

@@ -44,6 +44,7 @@ export interface SendEmailParams {
   body: string;
   accessToken: string;
   refreshToken: string;
+  from?: string;
 }
 
 export interface BatchJob {
