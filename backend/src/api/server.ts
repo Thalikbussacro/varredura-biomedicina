@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import { establishmentsRouter } from './routes/establishments.js';
 import { exportRouter } from './routes/export.js';
+import { configRouter } from './routes/config.js';
+import { emailsRouter } from './routes/emails.js';
 import { db } from '../db/connection.js';
 import { CONFIG } from '../config/index.js';
 
@@ -13,6 +15,8 @@ app.use(express.json());
 
 app.use('/api/establishments', establishmentsRouter);
 app.use('/api/export', exportRouter);
+app.use('/api/config', configRouter);
+app.use('/api/emails', emailsRouter);
 
 /**
  * GET /api/stats

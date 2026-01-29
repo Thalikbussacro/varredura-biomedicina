@@ -95,3 +95,30 @@ FROM establishments e
 LEFT JOIN cities c ON e.city_id = c.id
 LEFT JOIN contacts ct ON e.id = ct.establishment_id
 GROUP BY e.id;
+
+-- Tabela de emails gerados por IA
+CREATE TABLE IF NOT EXISTS generated_emails (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    establishment_id INTEGER NOT NULL REFERENCES establishments(id) ON DELETE CASCADE,
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    recipient_email TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'draft', -- draft, sent, failed
+    generated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    sent_at DATETIME,
+    error_message TEXT,
+    UNIQUE(establishment_id, status)
+);
+
+CREATE INDEX IF NOT EXISTS idx_generated_emails_establishment ON generated_emails(establishment_id);
+CREATE INDEX IF NOT EXISTS idx_generated_emails_status ON generated_emails(status);
+
+-- Tabela de configuração de email (singleton)
+CREATE TABLE IF NOT EXISTS email_config (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    gmail_refresh_token TEXT,
+    gmail_access_token TEXT,
+    gmail_token_expiry DATETIME,
+    user_email TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

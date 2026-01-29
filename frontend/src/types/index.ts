@@ -37,3 +37,43 @@ export interface ConnectionStatus {
   mode: 'api' | 'static';
   isConfigured: boolean;
 }
+
+export interface GeneratedEmail {
+  id: number;
+  establishment_id: number;
+  subject: string;
+  body: string;
+  recipient_email: string;
+  status: 'draft' | 'sent' | 'failed';
+  generated_at: string;
+  sent_at: string | null;
+  error_message: string | null;
+}
+
+export interface EmailConfig {
+  openai: {
+    configured: boolean;
+  };
+  gmail: {
+    clientConfigured: boolean;
+    authenticated: boolean;
+    userEmail: string | null;
+    tokenExpiry: string | null;
+  };
+}
+
+export interface BatchJob {
+  batchId: string;
+  establishmentId: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  error?: string;
+}
+
+export interface BatchStatus {
+  batchId: string;
+  total: number;
+  completed: number;
+  failed: number;
+  pending: number;
+  jobs: BatchJob[];
+}

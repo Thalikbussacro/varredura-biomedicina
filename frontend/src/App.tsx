@@ -3,6 +3,7 @@ import { DataTable } from './components/DataTable';
 import { Filters as FiltersComponent } from './components/Filters';
 import { ExportButton } from './components/ExportButton';
 import { ConnectionStatusBadge } from './components/ConnectionStatusBadge';
+import { EmailConfigBadge } from './components/EmailConfigBadge';
 import { useEstablishments, useStats } from './hooks/useEstablishments';
 import type { Filters } from './types';
 
@@ -40,6 +41,8 @@ function App() {
               </span>
               <span className="text-gray-400">|</span>
               <ConnectionStatusBadge inline />
+              <span className="text-gray-400">|</span>
+              <EmailConfigBadge />
             </p>
           )}
         </div>

@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-table';
 import { useState, useMemo } from 'react';
 import type { Establishment } from '../types';
+import { EmailActions } from './EmailActions';
 
 interface DataTableProps {
   data: Establishment[];
@@ -174,6 +175,17 @@ export function DataTable({ data }: DataTableProps) {
             '-'
           );
         }
+      },
+      {
+        id: 'actions',
+        header: 'E-mail IA',
+        size: 120,
+        cell: ({ row }) => (
+          <EmailActions
+            establishmentId={row.original.id}
+            hasEmail={row.original.emails}
+          />
+        )
       },
     ],
     []
