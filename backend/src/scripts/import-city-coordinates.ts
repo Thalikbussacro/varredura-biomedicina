@@ -67,7 +67,7 @@ async function importCoordinates() {
         updated++;
 
         // Log especial para Joaçaba
-        if (city.ibge_id === 4209409) {
+        if (city.ibge_id === 4209003) {
           console.log(`  🎯 Joaçaba-SC encontrada: lat=${lat}, lng=${lng}`);
         }
       } else {
@@ -82,7 +82,7 @@ async function importCoordinates() {
 
     // Verificar Joaçaba especificamente
     const joacaba = db.prepare(`
-      SELECT name, uf, lat, lng, ibge_id FROM cities WHERE ibge_id = 4209409
+      SELECT name, uf, lat, lng, ibge_id FROM cities WHERE ibge_id = 4209003
     `).get() as { name: string; uf: string; lat: number; lng: number; ibge_id: number } | undefined;
 
     if (joacaba) {
@@ -94,8 +94,8 @@ async function importCoordinates() {
       console.log(`     IBGE: ${joacaba.ibge_id}`);
 
       // Verificar se está próximo das coordenadas esperadas
-      const expectedLat = -27.174377;
-      const expectedLng = -51.505448;
+      const expectedLat = -27.1721;
+      const expectedLng = -51.5108;
       const latDiff = Math.abs(joacaba.lat - expectedLat);
       const lngDiff = Math.abs(joacaba.lng - expectedLng);
 
@@ -107,6 +107,9 @@ async function importCoordinates() {
       }
     } else {
       console.log(`\n  ⚠️  Joaçaba não encontrada no banco de dados`);
+      console.log(`     Isso pode acontecer se a cidade não atende aos critérios:`);
+      console.log(`     - População mínima (${process.env.MIN_POPULATION || '30,000'} habitantes)`);
+      console.log(`     - Ter pelo menos 1 estabelecimento cadastrado`);
     }
 
   } catch (error: any) {

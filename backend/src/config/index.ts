@@ -59,7 +59,7 @@ export const FILTER_CONFIG = {
 export const REFERENCE_CITY = {
   name: 'Joaçaba',
   uf: 'SC',
-  lat: -27.174377,
-  lng: -51.505448,
-  ibgeId: 4209409,
+  lat: -27.1721,
+  lng: -51.5108,
+  ibgeId: 4209003,
 } as const;

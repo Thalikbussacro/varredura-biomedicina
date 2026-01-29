@@ -90,7 +90,7 @@ SELECT
     GROUP_CONCAT(CASE WHEN ct.type = 'instagram' THEN ct.value END) AS instagram,
     GROUP_CONCAT(CASE WHEN ct.type = 'facebook' THEN ct.value END) AS facebook,
     GROUP_CONCAT(CASE WHEN ct.type = 'linkedin' THEN ct.value END) AS linkedin,
-    CAST(HAVERSINE(c.lat, c.lng, -27.174377, -51.505448) AS INTEGER) AS distancia_km
+    CAST(HAVERSINE(c.lat, c.lng, -27.1721, -51.5108) AS INTEGER) AS distancia_km
 FROM establishments e
 LEFT JOIN cities c ON e.city_id = c.id
 LEFT JOIN contacts ct ON e.id = ct.establishment_id
