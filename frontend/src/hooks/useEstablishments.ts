@@ -131,7 +131,7 @@ export function useEstablishments(filters: Filters) {
 
   // Se está usando API (não estático), refaz request quando filtros mudam
   useEffect(() => {
-    if (!isStatic && !loading) {
+    if (!isStatic) {
       const params = new URLSearchParams();
       if (filters.uf) params.set('uf', filters.uf);
       if (filters.city) params.set('city', filters.city);
@@ -145,7 +145,7 @@ export function useEstablishments(filters: Filters) {
         .catch(err => setError(err.message))
         .finally(() => setLoading(false));
     }
-  }, [filters.uf, filters.city, filters.category, filters.search, isStatic, loading]);
+  }, [filters.uf, filters.city, filters.category, filters.search, isStatic]);
 
   return { data, loading, error };
 }
