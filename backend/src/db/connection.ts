@@ -3,6 +3,7 @@ import { readFileSync, mkdirSync } from 'fs';
 import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { registerHaversineFunction } from './functions/haversine.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,6 +24,9 @@ export const db = new Database(DB_PATH, {
 
 // Habilitar foreign keys
 db.pragma('foreign_keys = ON');
+
+// Registrar funções customizadas
+registerHaversineFunction(db);
 
 // Função para inicializar o banco
 export function initDatabase(): void {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import pLimit from 'p-limit';
 import { db } from '../db/connection.js';
-import { KEYWORDS, CATEGORIES, CONFIG } from '../config/index.js';
+import { KEYWORDS, CATEGORIES, CONFIG, FILTER_CONFIG } from '../config/index.js';
 import { normalizeString } from '../utils/normalize.js';
 import { delay } from '../utils/delay.js';
 
@@ -81,9 +81,157 @@ function isGenericTitle(title: string): boolean {
     /fertilização in vitro$/i,
     /reprodução assistida$/i,
     /análises clínicas$/i,
+    // Navegação
+    /^página inicial/i,
+    /^home\s*$/i,
+    /^início$/i,
+    /^bem.*vindo/i,
+    /^sobre (nós|a empresa)/i,
+    /^contato$/i,
+    /^localização$/i,
+    // Just city + keyword
+    /^[a-záàâãéèêíïóôõöúçñ\s]+ - (rs|sc|pr)$/i,
+    // News-like titles
+    /^vaga de emprego/i,
+    /^curso de/i,
+    /^especialização em/i,
+    /^pós.*graduação/i,
+    // Generic listings
+    /^lista de/i,
+    /^encontre/i,
+    /^busca por/i,
   ];
 
   return genericPatterns.some(pattern => pattern.test(lowerTitle));
+}
+
+/**
+ * Verifica se a URL tem padrões irrelevantes (notícias, jobs, docs)
+ */
+function hasIrrelevantUrlPattern(url: string): boolean {
+  const urlLower = url.toLowerCase();
+
+  // News article patterns
+  const newsPatterns = [
+    /\/noticia\//i,
+    /\/noticias\//i,
+    /\/artigo\//i,
+    /\/materia\//i,
+    /\/reportagem\//i,
+    /\/post\//i,
+    /\/blog\//i,
+    /\/(20\d{2})\/\d{2}\//i,  // Date patterns like /2024/01/
+  ];
+
+  // Job listing patterns
+  const jobPatterns = [
+    /\/vaga[s]?\//i,
+    /\/emprego[s]?\//i,
+    /\/carreira[s]?\//i,
+    /\/oportunidade[s]?\//i,
+    /\/trabalhe.*conosco/i,
+  ];
+
+  // PDF/document indicators (not just extension)
+  const docPatterns = [
+    /\/pdf\//i,
+    /\/arquivo[s]?\//i,
+    /\/download[s]?\//i,
+    /\/publicac[o|a][o|e][s]?\//i,
+    /\.pdf[?#]/i,  // PDF with query params
+  ];
+
+  return [...newsPatterns, ...jobPatterns, ...docPatterns]
+    .some(pattern => pattern.test(urlLower));
+}
+
+/**
+ * Verifica se é PDF ou documento (detecção melhorada)
+ */
+function isPdfOrDocument(result: SerperResult): boolean {
+  const url = result.link.toLowerCase();
+  const title = result.title.toLowerCase();
+
+  // File extension patterns (including query params)
+  const fileExtensions = [
+    /\.pdf([?#]|$)/i,
+    /\.doc([?#]|$)/i,
+    /\.docx([?#]|$)/i,
+    /\.xls([?#]|$)/i,
+    /\.xlsx([?#]|$)/i,
+    /\.ppt([?#]|$)/i,
+    /\.pptx([?#]|$)/i,
+  ];
+
+  // Content-Type indicators in URL
+  const contentTypeIndicators = [
+    /application\/pdf/i,
+    /content.*type.*pdf/i,
+  ];
+
+  // Title indicators
+  const titleIndicators = [
+    /\[pdf\]/i,
+    /\(pdf\)/i,
+    /\.pdf\s*$/i,
+    /download.*pdf/i,
+  ];
+
+  return fileExtensions.some(p => p.test(url)) ||
+         contentTypeIndicators.some(p => p.test(url)) ||
+         titleIndicators.some(p => p.test(title));
+}
+
+/**
+ * Detecta artigos de notícias
+ */
+function isNewsArticle(title: string, snippet: string): boolean {
+  const text = `${title} ${snippet}`.toLowerCase();
+
+  const newsIndicators = [
+    // Temporal indicators
+    /publicado em/i,
+    /\d{1,2}\/\d{1,2}\/\d{4}/,  // Date format
+    /há \d+ (hora|dia|semana|mês|ano)/i,
+    // News language
+    /segundo.*especialista/i,
+    /de acordo com/i,
+    /conforme.*noticiado/i,
+    /reportagem/i,
+    /matéria/i,
+    // Update/news keywords
+    /atualizado em/i,
+    /última atualização/i,
+    /leia mais/i,
+    /saiba mais/i,
+  ];
+
+  return newsIndicators.some(pattern => pattern.test(text));
+}
+
+/**
+ * Detecta papers acadêmicos
+ */
+function isAcademicPaper(title: string, snippet: string): boolean {
+  const text = `${title} ${snippet}`.toLowerCase();
+
+  const academicIndicators = [
+    /revista científica/i,
+    /artigo científico/i,
+    /dissertação/i,
+    /tese de (mestrado|doutorado)/i,
+    /monografia/i,
+    /anais de/i,
+    /resumo.*expandido/i,
+    /abstract/i,
+    /keywords:/i,
+    /palavras.*chave:/i,
+    /doi:/i,
+    /issn/i,
+    /volume.*número/i,
+  ];
+
+  return academicIndicators.some(pattern => pattern.test(text));
 }
 
 /**
@@ -138,58 +286,135 @@ function isRelevantEstablishment(title: string, snippet: string): boolean {
 }
 
 /**
- * Verifica se o resultado é irrelevante (redes sociais, portais de vagas, PDFs, etc)
+ * Registra um resultado rejeitado no banco de dados
  */
-function isIrrelevantResult(result: SerperResult): boolean {
-  // Filtrar URLs de arquivos (PDFs, DOCs, planilhas)
-  const filePatterns = [
-    /\.pdf$/i,
-    /\.doc$/i,
-    /\.docx$/i,
-    /\.xls$/i,
-    /\.xlsx$/i,
-    /\.ppt$/i,
-    /\.pptx$/i,
-  ];
+function logRejectedResult(
+  result: SerperResult,
+  cityId: number,
+  keyword: string,
+  reason: string
+): void {
+  if (!FILTER_CONFIG.LOG_REJECTIONS) return;
 
-  if (filePatterns.some(pattern => pattern.test(result.link))) {
-    return true;
+  try {
+    const stmtLog = db.prepare(`
+      INSERT INTO rejected_results (url, title, reason, city_id, keyword)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+
+    stmtLog.run(result.link, result.title, reason, cityId, keyword);
+  } catch (error) {
+    // Silencioso - não queremos quebrar o fluxo por erro de logging
+  }
+}
+
+/**
+ * Verifica se o resultado é irrelevante (redes sociais, portais de vagas, PDFs, etc)
+ * Retorna: [isIrrelevant, reason]
+ */
+function isIrrelevantResult(result: SerperResult): [boolean, string | null] {
+  // Verificar PDFs e documentos (detecção melhorada)
+  if (isPdfOrDocument(result)) {
+    return [true, 'pdf'];
   }
 
-  // Filtrar sites irrelevantes
+  // Verificar padrões de URL irrelevantes
+  if (FILTER_CONFIG.ENABLE_URL_PATTERN_FILTER && hasIrrelevantUrlPattern(result.link)) {
+    return [true, 'url_pattern'];
+  }
+
+  // Filtrar sites irrelevantes (blacklist expandida)
   const irrelevantPatterns = [
+    // Social media
     /facebook\.com/i,
     /instagram\.com/i,
     /linkedin\.com/i,
     /twitter\.com/i,
     /youtube\.com/i,
     /tiktok\.com/i,
+
+    // Health directories
     /doctoralia/i,
     /boaforma/i,
+
+    // Generic
     /wikipedia/i,
     /reclameaqui/i,
-    /jusbrasil/i,
+    /google\.com/i,
+
+    // Job boards
     /catho/i,
     /vagas\.com/i,
     /indeed/i,
     /gupy\.io/i,
     /infojobs/i,
+    /trampos\.co/i,
+    /99jobs/i,
+    /empregos\.com\.br/i,
+    /curriculum\.com\.br/i,
+    /glassdoor/i,
+
+    // Marketplaces
     /olx\.com/i,
     /mercadolivre/i,
-    /google\.com/i,
-    /youtube/i,
+
+    // News portals (major)
+    /g1\.globo\.com/i,
+    /folha\.uol\.com/i,
+    /estadao\.com\.br/i,
+    /\buol\.com\.br/i,
+    /\br7\.com/i,
+    /band\.uol\.com\.br/i,
+    /noticias\.uol\.com\.br/i,
+
+    // Regional news
+    /gauchazh\.clicrbs\.com\.br/i,
+    /zerohora\.com/i,
+    /nsctotal\.com\.br/i,
+    /diariocatarinense\.com\.br/i,
+    /tribunapr\.com\.br/i,
+    /\bnoticias\./i,
+    /\bnoticia\./i,
+    /\bnews\./i,
+
+    // Academic/Research
+    /scielo\.br/i,
+    /pubmed/i,
+    /scholar\.google/i,
+    /researchgate\.net/i,
+    /repositorio\./i,
+    /tede\./i,
+    /bdtd\./i,
+
+    // Government (generic)
+    /planalto\.gov\.br/i,
+
+    // Directories
+    /guialocal/i,
+    /apontador/i,
+    /telelistas/i,
   ];
 
   if (irrelevantPatterns.some(pattern => pattern.test(result.link))) {
-    return true;
+    return [true, 'domain_blacklist'];
+  }
+
+  // Verificar se é artigo de notícia
+  if (FILTER_CONFIG.ENABLE_NEWS_FILTER && isNewsArticle(result.title, result.snippet)) {
+    return [true, 'news'];
+  }
+
+  // Verificar se é paper acadêmico
+  if (FILTER_CONFIG.ENABLE_ACADEMIC_FILTER && isAcademicPaper(result.title, result.snippet)) {
+    return [true, 'academic'];
   }
 
   // Filtrar títulos genéricos
   if (isGenericTitle(result.title)) {
-    return true;
+    return [true, 'generic_title'];
   }
 
-  return false;
+  return [false, null];
 }
 
 /**
@@ -247,10 +472,17 @@ export async function collectSerper(): Promise<void> {
 
           for (const result of results) {
             // Filtrar resultados irrelevantes
-            if (isIrrelevantResult(result)) continue;
+            const [isIrrelevant, reason] = isIrrelevantResult(result);
+            if (isIrrelevant) {
+              if (reason) logRejectedResult(result, city.id, keyword, reason);
+              continue;
+            }
 
             // Filtrar estabelecimentos não relevantes para biomedicina
-            if (!isRelevantEstablishment(result.title, result.snippet)) continue;
+            if (!isRelevantEstablishment(result.title, result.snippet)) {
+              logRejectedResult(result, city.id, keyword, 'irrelevant');
+              continue;
+            }
 
             const category = inferCategory(result.title, result.snippet);
 

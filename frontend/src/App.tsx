@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DataTable } from './components/DataTable';
 import { Filters as FiltersComponent } from './components/Filters';
 import { ExportButton } from './components/ExportButton';
+import { ConnectionStatusBadge } from './components/ConnectionStatusBadge';
 import { useEstablishments, useStats } from './hooks/useEstablishments';
 import type { Filters } from './types';
 
@@ -33,8 +34,12 @@ function App() {
             Leads para Estágio em Biomedicina - Sul do Brasil
           </h1>
           {stats && (
-            <p className="text-sm text-gray-600 mt-1">
-              {stats.total} estabelecimentos | {stats.withContacts} com contatos
+            <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
+              <span>
+                {stats.total} estabelecimentos | {stats.withContacts} com contatos
+              </span>
+              <span className="text-gray-400">|</span>
+              <ConnectionStatusBadge inline />
             </p>
           )}
         </div>

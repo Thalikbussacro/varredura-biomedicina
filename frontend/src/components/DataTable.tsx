@@ -33,6 +33,17 @@ export function DataTable({ data }: DataTableProps) {
         }
       },
       {
+        accessorKey: 'distancia_km',
+        header: 'Distância',
+        size: 90,
+        cell: ({ getValue }) => {
+          const value = getValue() as number | null;
+          if (!value) return '-';
+          return `${value} km`;
+        },
+        sortingFn: 'basic',
+      },
+      {
         accessorKey: 'nome',
         header: 'Nome',
         size: 180,

@@ -60,6 +60,7 @@ for (let i = 1; i < lines.length; i++) {
     else if (key === 'Instagram') row.instagram = value || null;
     else if (key === 'Facebook') row.facebook = value || null;
     else if (key === 'LinkedIn') row.linkedin = value || null;
+    else if (key === 'Distancia (km)') row.distancia_km = parseInt(value) || null;
   });
 
   data.push(row);

@@ -33,7 +33,7 @@ exportRouter.get('/csv', (req, res) => {
   // Gerar CSV
   const headers = [
     'ID', 'Estado', 'Cidade', 'Nome', 'Categoria', 'Endereco',
-    'Site', 'Fonte', 'Telefones', 'Emails', 'WhatsApp', 'Instagram', 'Facebook', 'LinkedIn'
+    'Site', 'Fonte', 'Telefones', 'Emails', 'WhatsApp', 'Instagram', 'Facebook', 'LinkedIn', 'Distancia (km)'
   ];
 
   const csvLines = [
@@ -53,6 +53,7 @@ exportRouter.get('/csv', (req, res) => {
       `"${(row.instagram || '').replace(/"/g, '""')}"`,
       `"${(row.facebook || '').replace(/"/g, '""')}"`,
       `"${(row.linkedin || '').replace(/"/g, '""')}"`,
+      row.distancia_km || '',
     ].join(';'))
   ];
 

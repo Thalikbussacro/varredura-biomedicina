@@ -44,3 +44,22 @@ export const CONFIG = {
   CRAWL_TIMEOUT: 10000,
   CONCURRENT_CRAWLS: 1, // Reduzido para 1 para evitar estouro de memória
 } as const;
+
+// Configurações de filtros
+export const FILTER_CONFIG = {
+  SIMILARITY_THRESHOLD: parseFloat(process.env.SIMILARITY_THRESHOLD || '0.85'),
+  ENABLE_URL_PATTERN_FILTER: process.env.ENABLE_URL_PATTERN_FILTER !== 'false',
+  ENABLE_NEWS_FILTER: process.env.ENABLE_NEWS_FILTER !== 'false',
+  ENABLE_ACADEMIC_FILTER: process.env.ENABLE_ACADEMIC_FILTER !== 'false',
+  ENABLE_FUZZY_DEDUP: process.env.ENABLE_FUZZY_DEDUP !== 'false',
+  LOG_REJECTIONS: process.env.LOG_REJECTIONS === 'true',
+} as const;
+
+// Cidade de referência para cálculo de distância
+export const REFERENCE_CITY = {
+  name: 'Joaçaba',
+  uf: 'SC',
+  lat: -27.174377,
+  lng: -51.505448,
+  ibgeId: 4209409,
+} as const;

@@ -5,11 +5,14 @@ CREATE TABLE IF NOT EXISTS cities (
     name TEXT NOT NULL,
     ibge_id INTEGER UNIQUE NOT NULL,
     population INTEGER,
+    lat REAL,
+    lng REAL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_cities_uf ON cities(uf);
 CREATE INDEX IF NOT EXISTS idx_cities_population ON cities(population);
+CREATE INDEX IF NOT EXISTS idx_cities_coords ON cities(lat, lng);
 
 -- Tabela de estabelecimentos
 CREATE TABLE IF NOT EXISTS establishments (
@@ -57,6 +60,19 @@ CREATE TABLE IF NOT EXISTS search_log (
 
 CREATE INDEX IF NOT EXISTS idx_search_log_city ON search_log(city_id);
 
+-- Log de resultados rejeitados
+CREATE TABLE IF NOT EXISTS rejected_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    url TEXT NOT NULL,
+    title TEXT NOT NULL,
+    reason TEXT NOT NULL, -- 'domain_blacklist', 'url_pattern', 'pdf', 'news', 'academic', 'generic_title', 'irrelevant'
+    city_id INTEGER REFERENCES cities(id),
+    keyword TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_rejected_reason ON rejected_results(reason);
+
 -- View para exportação
 CREATE VIEW IF NOT EXISTS v_establishments_export AS
 SELECT
@@ -73,7 +89,8 @@ SELECT
     GROUP_CONCAT(CASE WHEN ct.type = 'whatsapp' THEN ct.value END) AS whatsapp,
     GROUP_CONCAT(CASE WHEN ct.type = 'instagram' THEN ct.value END) AS instagram,
     GROUP_CONCAT(CASE WHEN ct.type = 'facebook' THEN ct.value END) AS facebook,
-    GROUP_CONCAT(CASE WHEN ct.type = 'linkedin' THEN ct.value END) AS linkedin
+    GROUP_CONCAT(CASE WHEN ct.type = 'linkedin' THEN ct.value END) AS linkedin,
+    CAST(HAVERSINE(c.lat, c.lng, -27.174377, -51.505448) AS INTEGER) AS distancia_km
 FROM establishments e
 LEFT JOIN cities c ON e.city_id = c.id
 LEFT JOIN contacts ct ON e.id = ct.establishment_id

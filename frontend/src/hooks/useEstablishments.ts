@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Establishment, Stats, Filters } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-const USE_STATIC_DATA = import.meta.env.VITE_USE_STATIC_DATA === 'true';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+export const USE_STATIC_DATA = import.meta.env.VITE_USE_STATIC_DATA === 'true';
 
 // Cache global dos dados (carrega uma única vez)
 let cachedData: Establishment[] | null = null;
 let loadingPromise: Promise<Establishment[]> | null = null;
-let usingStaticData = USE_STATIC_DATA;
+export let usingStaticData = USE_STATIC_DATA;
 
 /**
  * Carrega os dados - tenta API primeiro, fallback para JSON se falhar

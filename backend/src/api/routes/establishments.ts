@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { db } from '../../db/connection.js';
+import { REFERENCE_CITY } from '../../config/index.js';
 
 export const establishmentsRouter = Router();
 
@@ -24,7 +25,8 @@ establishmentsRouter.get('/', (req, res) => {
       (SELECT GROUP_CONCAT(value, ', ') FROM contacts WHERE establishment_id = e.id AND type = 'email') as emails,
       (SELECT GROUP_CONCAT(value, ', ') FROM contacts WHERE establishment_id = e.id AND type = 'whatsapp') as whatsapp,
       (SELECT GROUP_CONCAT(value, ', ') FROM contacts WHERE establishment_id = e.id AND type = 'instagram') as instagram,
-      (SELECT GROUP_CONCAT(value, ', ') FROM contacts WHERE establishment_id = e.id AND type = 'facebook') as facebook
+      (SELECT GROUP_CONCAT(value, ', ') FROM contacts WHERE establishment_id = e.id AND type = 'facebook') as facebook,
+      CAST(HAVERSINE(c.lat, c.lng, ${REFERENCE_CITY.lat}, ${REFERENCE_CITY.lng}) AS INTEGER) as distancia_km
     FROM establishments e
     JOIN cities c ON e.city_id = c.id
     WHERE 1=1

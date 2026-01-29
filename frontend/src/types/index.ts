@@ -12,6 +12,7 @@ export interface Establishment {
   whatsapp: string | null;
   instagram: string | null;
   facebook: string | null;
+  distancia_km: number | null;
 }
 
 export interface Stats {
@@ -28,4 +29,11 @@ export interface Filters {
   search: string;
   onlyWithPhone: boolean;
   onlyWithEmail: boolean;
+}
+
+export interface ConnectionStatus {
+  isOnline: boolean;
+  apiUrl: string;
+  mode: 'api' | 'static';
+  isConfigured: boolean;
 }
