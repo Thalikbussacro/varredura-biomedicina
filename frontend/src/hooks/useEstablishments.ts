@@ -138,6 +138,18 @@ export function useEstablishments(filters: Filters) {
       if (filters.category) params.set('category', filters.category);
       if (filters.search) params.set('search', filters.search);
 
+      // Filtro de validação
+      if (filters.validationFilter === 'all') {
+        params.set('includeInvalidated', 'true');
+      } else if (filters.validationFilter === 'pending') {
+        params.set('includeInvalidated', 'true');
+        params.set('validationStatus', 'pending');
+      } else if (filters.validationFilter === 'flagged') {
+        params.set('includeInvalidated', 'true');
+        params.set('validationStatus', 'flagged');
+      }
+      // Para 'validated', não adiciona nada (comportamento padrão)
+
       setLoading(true);
       fetch(`${API_URL}/establishments?${params}`)
         .then(res => res.json())
@@ -145,7 +157,7 @@ export function useEstablishments(filters: Filters) {
         .catch(err => setError(err.message))
         .finally(() => setLoading(false));
     }
-  }, [filters.uf, filters.city, filters.category, filters.search, isStatic]);
+  }, [filters.uf, filters.city, filters.category, filters.search, filters.validationFilter, isStatic]);
 
   return { data, loading, error };
 }

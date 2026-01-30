@@ -13,6 +13,9 @@ export interface Establishment {
   instagram: string | null;
   facebook: string | null;
   distancia_km: number | null;
+  validation_status: 'pending' | 'validated' | 'flagged' | 'manual_approved' | 'manual_rejected';
+  validation_reason: string | null;
+  validation_confidence: number | null;
 }
 
 export interface Stats {
@@ -29,6 +32,7 @@ export interface Filters {
   search: string;
   onlyWithPhone: boolean;
   onlyWithEmail: boolean;
+  validationFilter: 'all' | 'validated' | 'pending' | 'flagged';
 }
 
 export interface ConnectionStatus {
@@ -76,4 +80,27 @@ export interface BatchStatus {
   failed: number;
   pending: number;
   jobs: BatchJob[];
+}
+
+export interface ValidationBatchJob {
+  batchId: string;
+  establishmentId: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  error?: string;
+}
+
+export interface ValidationBatchStatus {
+  batchId: string;
+  total: number;
+  completed: number;
+  validated: number;
+  flagged: number;
+  failed: number;
+  status: 'processing' | 'completed' | 'failed';
+  jobs: ValidationBatchJob[];
+}
+
+export interface ValidationStats {
+  total: number;
+  byStatus: Record<string, number>;
 }

@@ -4,6 +4,7 @@ import { establishmentsRouter } from './routes/establishments.js';
 import { exportRouter } from './routes/export.js';
 import { configRouter } from './routes/config.js';
 import { emailsRouter } from './routes/emails.js';
+import validationRouter from './routes/validation.js';
 import { db } from '../db/connection.js';
 import { CONFIG } from '../config/index.js';
 
@@ -17,6 +18,7 @@ app.use('/api/establishments', establishmentsRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/config', configRouter);
 app.use('/api/emails', emailsRouter);
+app.use('/api/validation', validationRouter);
 
 /**
  * GET /api/stats

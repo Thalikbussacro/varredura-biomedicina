@@ -122,3 +122,26 @@ CREATE TABLE IF NOT EXISTS email_config (
     user_email TEXT,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Adicionar colunas de validação aos estabelecimentos
+ALTER TABLE establishments ADD COLUMN validation_status TEXT DEFAULT 'pending';
+ALTER TABLE establishments ADD COLUMN validation_reason TEXT;
+ALTER TABLE establishments ADD COLUMN validation_confidence REAL;
+ALTER TABLE establishments ADD COLUMN validated_at DATETIME;
+
+CREATE INDEX IF NOT EXISTS idx_establishments_validation_status ON establishments(validation_status);
+
+-- Tabela de batches de validação
+CREATE TABLE IF NOT EXISTS validation_batches (
+    id TEXT PRIMARY KEY, -- UUID
+    total INTEGER NOT NULL,
+    completed INTEGER NOT NULL DEFAULT 0,
+    validated INTEGER NOT NULL DEFAULT 0,
+    flagged INTEGER NOT NULL DEFAULT 0,
+    failed INTEGER NOT NULL DEFAULT 0,
+    started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at DATETIME,
+    status TEXT NOT NULL DEFAULT 'processing' -- processing, completed, failed
+);
+
+CREATE INDEX IF NOT EXISTS idx_validation_batches_status ON validation_batches(status);

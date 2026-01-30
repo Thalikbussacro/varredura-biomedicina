@@ -4,6 +4,7 @@ import { Filters as FiltersComponent } from './components/Filters';
 import { ExportButton } from './components/ExportButton';
 import { ConnectionStatusBadge } from './components/ConnectionStatusBadge';
 import { EmailConfigBadge } from './components/EmailConfigBadge';
+import { ValidationControl } from './components/ValidationControl';
 import { useEstablishments, useStats } from './hooks/useEstablishments';
 import type { Filters } from './types';
 
@@ -15,6 +16,7 @@ function App() {
     search: '',
     onlyWithPhone: false,
     onlyWithEmail: false,
+    validationFilter: 'validated',
   });
 
   const { data: rawData, loading, error } = useEstablishments(filters);
@@ -49,6 +51,9 @@ function App() {
       </header>
 
       <main className="container mx-auto px-4 py-6">
+        {/* Add validation control before filters */}
+        <ValidationControl />
+
         <div className="flex justify-between items-start mb-4">
           <FiltersComponent filters={filters} onChange={setFilters} />
           <ExportButton filters={filters} data={data} />

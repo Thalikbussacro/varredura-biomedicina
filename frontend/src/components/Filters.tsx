@@ -60,6 +60,20 @@ export function Filters({ filters, onChange }: FiltersProps) {
       </div>
 
       <div className="flex flex-col">
+        <label className="text-sm font-medium text-gray-700 mb-1">Status Validação</label>
+        <select
+          value={filters.validationFilter}
+          onChange={(e) => onChange({ ...filters, validationFilter: e.target.value as any })}
+          className="px-3 py-2 border rounded-md min-w-[180px]"
+        >
+          <option value="validated">✅ Validados</option>
+          <option value="pending">⏳ Pendentes</option>
+          <option value="flagged">🚫 Sinalizados</option>
+          <option value="all">Todos</option>
+        </select>
+      </div>
+
+      <div className="flex flex-col">
         <label className="text-sm font-medium text-gray-700 mb-1">Buscar</label>
         <input
           type="text"

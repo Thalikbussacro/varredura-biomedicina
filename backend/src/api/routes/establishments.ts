@@ -9,7 +9,7 @@ export const establishmentsRouter = Router();
  * Lista estabelecimentos com filtros opcionais
  */
 establishmentsRouter.get('/', (req, res) => {
-  const { uf, city, category, search } = req.query;
+  const { uf, city, category, search, includeInvalidated, validationStatus } = req.query;
 
   let query = `
     SELECT
@@ -26,13 +26,26 @@ establishmentsRouter.get('/', (req, res) => {
       (SELECT GROUP_CONCAT(value, ', ') FROM contacts WHERE establishment_id = e.id AND type = 'whatsapp') as whatsapp,
       (SELECT GROUP_CONCAT(value, ', ') FROM contacts WHERE establishment_id = e.id AND type = 'instagram') as instagram,
       (SELECT GROUP_CONCAT(value, ', ') FROM contacts WHERE establishment_id = e.id AND type = 'facebook') as facebook,
-      CAST(HAVERSINE(c.lat, c.lng, ${REFERENCE_CITY.lat}, ${REFERENCE_CITY.lng}) AS INTEGER) as distancia_km
+      CAST(HAVERSINE(c.lat, c.lng, ${REFERENCE_CITY.lat}, ${REFERENCE_CITY.lng}) AS INTEGER) as distancia_km,
+      e.validation_status,
+      e.validation_reason,
+      e.validation_confidence
     FROM establishments e
     JOIN cities c ON e.city_id = c.id
     WHERE 1=1
   `;
 
   const params: any[] = [];
+
+  // Filtro de validação
+  if (validationStatus) {
+    // Filtra por status específico
+    query += ` AND e.validation_status = ?`;
+    params.push(validationStatus);
+  } else if (includeInvalidated !== 'true') {
+    // Por padrão, mostrar apenas validados
+    query += ` AND e.validation_status IN ('validated', 'manual_approved')`;
+  }
 
   if (uf) {
     query += ` AND c.uf = ?`;
