@@ -122,7 +122,7 @@ class ValidationBatchProcessor {
 
         // Rate limiting: 30 seconds between calls
         if (i < queue.jobs.length - 1) {
-          await this.delay(30000);
+          await this.delay(5000);
         }
       }
 
